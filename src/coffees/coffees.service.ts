@@ -2,18 +2,20 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Coffee } from './entities/coffee.entity';
 import { Flavor } from "./entities/flavor.entity";
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository} from 'typeorm';
 import { CreateCoffeeDto } from "./dto/create-coffee.dto/create-coffee.dto";
 import { UpdateCoffeeDto } from "./dto/update-coffee.dto/update-coffee.dto"
 import { PaginationQueryDto } from "../common/dto/pagination-query.dto/pagination-query.dto";
+import {Event} from "../events/entities/event.entity/event.entity";
 
 @Injectable()
 export class CoffeesService {
   constructor(
       @InjectRepository(Coffee)
-        private readonly coffeeRepository: Repository<Coffee>,
+      private readonly coffeeRepository: Repository<Coffee>,
       @InjectRepository(Flavor)
-        private readonly flavorRepository: Repository<Flavor>,
+      private readonly flavorRepository: Repository<Flavor>,
+      private readonly dataSource: DataSource,
   ) {}
 
   findAll(paginationQuery: PaginationQueryDto) {
@@ -56,7 +58,7 @@ export class CoffeesService {
       flavors,
     });
     if (!coffee) {
-      throw new NotFoundException(`Coffeee #${id} not found!`);
+      throw new NotFoundException(`Coffee #${id} not found!`);
     }
     return this.coffeeRepository.save(coffee);
   }
@@ -64,6 +66,30 @@ export class CoffeesService {
   async remove(id: string) {
     const coffee = await this.findOne(id);
     return this.coffeeRepository.remove(coffee);
+  }
+
+  async recommendCoffee(coffee: Coffee) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+        coffee.recommendations++;
+        const recommendEvent = new Event();
+        recommendEvent.name = 'recommend_coffee';
+        recommendEvent.type = 'coffee';
+        recommendEvent.payload = { coffeeId: coffee.id };
+
+        await queryRunner.manager.save(coffee);
+        await queryRunner.manager.save(recommendEvent);
+
+        await queryRunner.commitTransaction();
+    } catch (err) {
+        // since we have errors lets rollback the changes we made
+        await queryRunner.rollbackTransaction();
+    } finally {
+        // you need to release a queryRunner which was manually instantiated
+        await queryRunner.release();
+    }
   }
 
   private async preloadFlavorByName(name: string): Promise<Flavor> {
