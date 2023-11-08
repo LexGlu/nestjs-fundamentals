@@ -6,7 +6,7 @@ import { DataSource, Repository} from 'typeorm';
 import { CreateCoffeeDto } from "./dto/create-coffee.dto/create-coffee.dto";
 import { UpdateCoffeeDto } from "./dto/update-coffee.dto/update-coffee.dto"
 import { PaginationQueryDto } from "../common/dto/pagination-query.dto/pagination-query.dto";
-import {Event} from "../events/entities/event.entity/event.entity";
+import { Event } from "../events/entities/event.entity/event.entity";
 
 @Injectable()
 export class CoffeesService {
