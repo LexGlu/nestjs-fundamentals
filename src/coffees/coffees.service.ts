@@ -21,7 +21,6 @@ export class CoffeesService {
       @Inject(coffeesConfig.KEY)
       private readonly coffeesConfiguration: ConfigType<typeof coffeesConfig>,
   ) {
-    console.log(coffeesConfiguration);
   }
 
   findAll(paginationQuery: PaginationQueryDto) {

@@ -4,7 +4,7 @@ import { throwError } from "rxjs";
 
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
-  // updated usage of throwError to use a factory function
+  // updated usage of throwError to use a factory function (old usage of throwError is deprecated)
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       timeout(3000),
